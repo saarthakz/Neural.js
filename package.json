@@ -1,0 +1,19 @@
+{
+  "name": "neural",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "build": "node ./util/build.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "ml-matrix": "^6.10.4"
+  },
+  "devDependencies": {
+    "esbuild": "^0.16.7"
+  }
+}
