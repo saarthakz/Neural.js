@@ -1,7 +1,7 @@
 import { Matrix } from "../Matrix/matrix.js";
 
 export function crossEntropy(prediction: Matrix, trueValue: Matrix): number {
-  return Matrix.sum(
+  return -1 * Matrix.sum(
     Matrix.mul(
       trueValue,
       Matrix.log(prediction)

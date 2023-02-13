@@ -31,31 +31,60 @@ export class Matrix {
   getData(): number[][] { return this.data; }
   set(row: number, col: number, val: number): void { this.data[row][col] = val; }
 
-  add(other: Matrix): Matrix {
-    if (this.rows != other.rows || this.cols != other.cols) throw Error("Dimensions do not match");
-    const rows = this.rows;
-    const cols = this.cols;
+  add(other: Matrix | number): Matrix {
 
-    for (let row = 0; row < rows; row++) {
-      for (let col = 0; col < cols; col++) {
-        this.set(row, col,
-          this.get(row, col) + other.get(row, col)
-        );
+    if (typeof other === "number") {
+      const rows = this.rows;
+      const cols = this.cols;
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+          this.set(row, col,
+            this.get(row, col) + other
+          );
+        };
       };
+    } else {
+      if (this.rows != other.rows || this.cols != other.cols) {
+        throw Error("Dimensions do not match");
+      }
+      const rows = this.rows;
+      const cols = this.cols;
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+          this.set(row, col,
+            this.get(row, col) + other.get(row, col)
+          );
+        };
+      };
+
     };
     return this;
+
   };
 
-  sub(other: Matrix): Matrix {
-    if (this.rows != other.rows || this.cols != other.cols) throw Error("Dimensions do not match");
-    const rows = this.rows;
-    const cols = this.cols;
+  sub(other: Matrix | number): Matrix {
 
-    for (let row = 0; row < rows; row++) {
-      for (let col = 0; col < cols; col++) {
-        this.set(row, col,
-          this.get(row, col) - other.get(row, col)
-        );
+    if (typeof other === "number") {
+      const rows = this.rows;
+      const cols = this.cols;
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+          this.set(row, col,
+            this.get(row, col) - other
+          );
+        };
+      };
+    } else {
+      if (this.rows != other.rows || this.cols != other.cols) throw Error("Dimensions do not match");
+      const rows = this.rows;
+      const cols = this.cols;
+
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+          this.set(row, col,
+            this.get(row, col) - other.get(row, col)
+          );
+        };
       };
     };
     return this;
@@ -116,6 +145,14 @@ export class Matrix {
     return this;
   };
 
+  pow(power: number): Matrix {
+    for (let row = 0; row < this.rows; row++)
+      for (let col = 0; col < this.cols; col++)
+        this.set(row, col, Math.pow(this.get(row, col), power));
+
+    return this;
+  };
+
   log(): Matrix {
     for (let row = 0; row < this.rows; row++)
       for (let col = 0; col < this.cols; col++)
@@ -124,8 +161,9 @@ export class Matrix {
     return this;
   };
 
-
+  /**Post Matrix Multiplication*/
   matMul(other: Matrix) {
+
     if (this.cols != other.rows) throw Error("Row-Column mismatch");
 
     const oneRows = this.rows;
@@ -134,23 +172,25 @@ export class Matrix {
 
     const result = new Array(oneRows).fill(0).map(() => new Array(twoCols).fill(0));
 
-    for (let row = oneRows; row < oneRows; row++)
+    for (let row = 0; row < oneRows; row++)
       for (let col = 0; col < twoCols; col++) {
-        let temp = 0;
+        let sum = 0;
         for (let ctr = 0; ctr < commonDim; ctr++)
-          temp += this.get(row, ctr) * other.get(ctr, col);
+          sum += this.get(row, ctr) * other.get(ctr, col);
 
-        result[row][col] = temp;
+        result[row][col] = sum;
       };
 
     this.data = result;
+    this.cols = other.cols;
+
     return this;
   };
 
   transpose() {
     const rows = this.rows;
     const cols = this.cols;
-    const newData = new Array(cols).fill(0).map((elem) => new Array(rows).fill(0));
+    const newData = new Array(cols).fill(0).map(() => new Array(rows).fill(0));
 
     for (let row = 0; row < rows; row++) {
       for (let col = 0; col < cols; col++) {
@@ -197,6 +237,11 @@ export class Matrix {
   static exp(matrix: Matrix): Matrix {
     const newMatrix = new Matrix(0, 0, matrix);
     return newMatrix.exp();
+  };
+
+  static pow(matrix: Matrix, power: number): Matrix {
+    const newMatrix = new Matrix(0, 0, matrix);
+    return newMatrix.pow(power);
   };
 
   static log(matrix: Matrix): Matrix {
