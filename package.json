@@ -10,8 +10,8 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "dependencies": {},
   "devDependencies": {
+    "@types/node": "^18.13.0",
     "esbuild": "^0.16.7"
   }
 }

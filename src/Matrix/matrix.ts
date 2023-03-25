@@ -1,7 +1,7 @@
 export class Matrix {
-  protected rows: number;
-  protected cols: number;
-  protected data: number[][];
+  private rows: number;
+  private cols: number;
+  private data: number[][];
 
   constructor(rows: number, cols: number, matrix?: Matrix) {
     if (matrix !== undefined) {
@@ -204,6 +204,121 @@ export class Matrix {
     return this;
   };
 
+  padding(num: number) {
+    const data = this.data;
+    const newData = new Array(this.rows + 2 * num).fill(0)
+      .map(() => new Array(this.cols + 2 * num).fill(0));
+
+    for (let row = num; row < this.rows + num; row++) {
+      for (let col = num; col < this.cols + num; col++) {
+        newData[row][col] = data[row - num][col - num];
+      };
+    };
+
+    this.data = newData;
+    this.rows += num;
+    this.cols += num;
+    return this;
+  };
+
+  crossCorrelation(kernel: Matrix, strides = 1) {
+    if (kernel.rows > this.rows) throw Error("Kernel rows can't be greater than the matrix");
+    if (kernel.cols > this.cols) throw Error("Kernel columns can't be greater than the matrix");
+
+    const outputRows = Math.floor((this.rows - kernel.rows) / strides + 1);
+    const outputCols = Math.floor((this.cols - kernel.cols) / strides + 1);
+
+    const output: number[][] = new Array(outputRows).fill(0).map(() => new Array(outputCols).fill(0));
+
+    for (let row = 0; row < this.rows; row += strides) {
+      if (row + kernel.rows > this.rows) break;
+      for (let col = 0; col < this.cols; col += strides) {
+        if (col + kernel.cols > this.cols) break;
+        let sum = 0;
+        for (let kRow = 0; kRow < kernel.rows; kRow++) {
+          for (let kCol = 0; kCol < kernel.cols; kCol++) {
+            // console.log("Kernel: ", kRow, kCol, " and Matrix ", row, col);
+            sum += kernel.get(kRow, kCol) * this.get(row + kRow, col + kCol);
+          };
+        };
+        output[row / strides][col / strides] += sum;
+      };
+    };
+
+    this.rows = outputRows;
+    this.cols = outputCols;
+    this.data = output;
+
+    return this;
+  };
+
+  transposeCorrelation(kernel: Matrix, strides = 1) {
+    const outputRows = (this.rows - 1) * strides + kernel.rows;
+    const outputCols = (this.cols - 1) * strides + kernel.cols;
+
+    const output: number[][] = new Array(outputRows).fill(0).map(() => new Array(outputCols).fill(0));
+
+    for (let row = 0; row < this.rows; row++) {
+      for (let col = 0; col < this.cols; col++) {
+        const rowStart = row * strides;
+        const colStart = col * strides;
+
+        for (let kRow = 0; kRow < kernel.rows; kRow++) {
+          for (let kCol = 0; kCol < kernel.rows; kCol++) {
+            output[rowStart + kRow][colStart + kCol] += kernel.get(kRow, kCol) * this.get(row, col);
+          };
+        };
+      };
+    };
+
+    this.rows = outputRows;
+    this.cols = outputCols;
+    this.data = output;
+
+    return this;
+  };
+
+  bilinearUpScaling() {
+
+    const output: number[][] = new Array(this.rows * 2 - 1).fill(0).map(() => new Array(this.cols * 2 - 1).fill(0));
+
+    for (let row = 0; row < this.rows; row++) {
+      for (let col = 0; col < this.cols; col++) {
+        output[2 * row][2 * col] = this.get(row, col);
+      };
+    };
+
+    this.rows = this.rows * 2 - 1;
+    this.cols = this.cols * 2 - 1;
+
+
+    //Vertical values
+    for (let row = 1; row < this.rows; row += 2) {
+      for (let col = 0; col < this.cols; col += 2) {
+        output[row][col] = (output[row - 1][col] + output[row + 1][col]) / 2;
+      };
+    };
+
+    //Horizontal values
+    for (let row = 0; row < this.rows; row += 2) {
+      for (let col = 1; col < this.cols; col += 2) {
+        output[row][col] = (output[row][col - 1] + output[row][col + 1]) / 2;
+      };
+    };
+
+    //Center values
+    for (let row = 1; row < this.rows; row += 2) {
+      for (let col = 1; col < this.cols; col += 2) {
+        output[row][col] = (output[row][col - 1] + output[row][col + 1] + output[row - 1][col] + output[row + 1][col]) / 4;
+      };
+    };
+
+    this.data = output;
+
+    return this;
+
+  };
+
   static gen(rows: number, cols: number, generator: () => number) {
     const matrix = new Matrix(rows, cols);
     for (let row = 0; row < rows; row++) {
@@ -336,6 +451,26 @@ export class Matrix {
       newMatrix.set(row, row, 1);
 
     return newMatrix;
+  };
+
+  static padding(matrix: Matrix, num: number): Matrix {
+    const newMatrix = new Matrix(0, 0, matrix);
+    return newMatrix.padding(num);
+  };
+
+  static crossCorrelation(input: Matrix, kernel: Matrix, strides = 1): Matrix {
+    const newMatrix = new Matrix(0, 0, input);
+    return newMatrix.crossCorrelation(kernel, strides);
+  };
+
+  static transposeCorrelation(input: Matrix, kernel: Matrix, strides = 1): Matrix {
+    const newMatrix = new Matrix(0, 0, input);
+    return newMatrix.transposeCorrelation(kernel, strides);
+  };
+
+  static bilinearUpScaling(matrix: Matrix): Matrix {
+    const newMatrix = new Matrix(0, 0, matrix);
+    return matrix.bilinearUpScaling();
   };
 
 };
