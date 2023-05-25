@@ -241,7 +241,38 @@ export class Matrix {
             sum += kernel.get(kRow, kCol) * this.get(row + kRow, col + kCol);
           };
         };
-        output[row / strides][col / strides] += sum;
+        output[row / strides][col / strides] = sum;
+      };
+    };
+
+    this.rows = outputRows;
+    this.cols = outputCols;
+    this.data = output;
+
+    return this;
+  };
+
+  maxPooling(kernelSize = 2, strides = 1) {
+    if (kernelSize > this.rows) throw Error("Kernel rows can't be greater than the matrix");
+    if (kernelSize > this.cols) throw Error("Kernel columns can't be greater than the matrix");
+
+    const outputRows = Math.floor((this.rows - kernelSize) / strides + 1);
+    const outputCols = Math.floor((this.cols - kernelSize) / strides + 1);
+
+    const output: number[][] = new Array(outputRows).fill(0).map(() => new Array(outputCols).fill(0));
+
+    for (let row = 0; row < this.rows; row += strides) {
+      if (row + kernelSize > this.rows) break;
+      for (let col = 0; col < this.cols; col += strides) {
+        if (col + kernelSize > this.cols) break;
+        let max = 0;
+        for (let kRow = 0; kRow < kernelSize; kRow++) {
+          for (let kCol = 0; kCol < kernelSize; kCol++) {
+            // console.log("Kernel: ", kRow, kCol, " and Matrix ", row, col);
+            max = Math.max(this.get(row + kRow, col + kCol), max);
+          };
+        };
+        output[row / strides][col / strides] = max;
       };
     };
 
@@ -461,6 +492,11 @@ export class Matrix {
   static crossCorrelation(input: Matrix, kernel: Matrix, strides = 1): Matrix {
     const newMatrix = new Matrix(0, 0, input);
     return newMatrix.crossCorrelation(kernel, strides);
+  };
+
+  static maxPooling(input: Matrix, kernelSize = 2, strides = 1): Matrix {
+    const newMatrix = new Matrix(0, 0, input);
+    return newMatrix.maxPooling(kernelSize, strides);
   };
 
   static transposeCorrelation(input: Matrix, kernel: Matrix, strides = 1): Matrix {
